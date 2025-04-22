@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meeting Assistant - AI Meeting Management Tool</title>
+  
+  <!-- Include Tailwind CSS directly -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Custom CSS -->
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f9fafb;
+      color: #111827;
+      height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+    
+    #app {
+      height: 100%;
+    }
+    
+    .loading-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    
+    .loading-logo {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 20px;
+      animation: pulse 2s infinite;
+    }
+    
+    .loading-text {
+      font-size: 1.25rem;
+      color: #4b5563;
+    }
+    
+    @keyframes pulse {
+      0% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.5;
+      }
+      100% {
+        opacity: 1;
+      }
+    }
+    
+    .app-container {
+      display: flex;
+      height: 100vh;
+    }
+    
+    .sidebar {
+      width: 260px;
+      background-color: #1f2937;
+      color: white;
+      padding: 1rem;
+    }
+    
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    .header {
+      height: 64px;
+      background-color: white;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 0 1.5rem;
+    }
+    
+    .content-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem;
+      background-color: #f9fafb;
+    }
+    
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      margin-bottom: 0.5rem;
+    }
+    
+    .nav-item:hover {
+      background-color: #374151;
+    }
+    
+    .nav-item.active {
+      background-color: #3b82f6;
+    }
+    
+    .card {
+      background-color: white;
+      border-radius: 0.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    
+    .btn-primary {
+      background-color: #3b82f6;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: #2563eb;
+    }
+  </style>
+</head>
+<body>
+  <!-- Initial Loading State -->
+  <div id="loading" class="loading-container">
+    <div class="loading-logo">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2v3m0 14v3M4.22 4.22l2.12 2.12m11.32 11.32l2.12 2.12M2 12h3m14 0h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"></path>
+        <circle cx="12" cy="12" r="5"></circle>
+      </svg>
+    </div>
+    <p class="loading-text">Loading Meeting Assistant...</p>
+  </div>
+  
+  <!-- Main Application -->
+  <div id="app" style="display: none;">
+    <div class="app-container">
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <h1 class="text-xl font-bold mb-6">Meeting Assistant</h1>
+        
+        <nav class="space-y-2">
+          <div class="nav-item" id="nav-record" onclick="showTab('record')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            <span>Record Meeting</span>
+          </div>
+          
+          <div class="nav-item" id="nav-meetings" onclick="showTab('meetings')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6"></line>
+              <line x1="8" y1="12" x2="21" y2="12"></line>
+              <line x1="8" y1="18" x2="21" y2="18"></line>
+              <line x1="3" y1="6" x2="3.01" y2="6"></line>
+              <line x1="3" y1="12" x2="3.01" y2="12"></line>
+              <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+            <span>Past Meetings</span>
+          </div>
+          
+          <div class="nav-item" id="nav-action-items" onclick="showTab('action-items')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 11l3 3L22 4"></path>
+              <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+            </svg>
+            <span>Action Items</span>
+          </div>
+          
+          <div class="nav-item" id="nav-team" onclick="showTab('team')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            <span>Team Members</span>
+          </div>
+          
+          <div class="nav-item" id="nav-csv-import" onclick="showTab('csv-import')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <span>CSV Import</span>
+          </div>
+        </nav>
+      </div>
+      
+      <!-- Main Content -->
+      <div class="main-content">
+        <!-- Header -->
+        <header class="header">
+          <button class="relative p-2 rounded-full hover:bg-gray-100">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            <span class="absolute top-0 right-0 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center">
+              2
+            </span>
+          </button>
+        </header>
+        
+        <!-- Content Areas -->
+        <main class="content-area">
+          <!-- Record Meeting Tab -->
+          <div id="tab-record" class="tab-content">
+            <h2 class="text-2xl font-bold mb-6">Record or Upload Meeting</h2>
+            
+            <div class="card">
+              <h3 class="text-lg font-semibold mb-4">Live Recording</h3>
+              
+              <div class="flex items-center justify-center space-x-4 mb-6">
+                <button id="record-button" class="bg-red-500 hover:bg-red-600 text-white rounded-full p-4" onclick="toggleRecording()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                    <line x1="12" y1="19" x2="12" y2="23"></line>
+                    <line x1="8" y1="23" x2="16" y2="23"></line>
+                  </svg>
+                </button>
+              </div>
+              
+              <div class="text-center">
+                <p id="recording-status" class="text-gray-500">Click to start recording your meeting</p>
+              </div>
+            </div>
+            
+            <div class="card">
+              <h3 class="text-lg font-semibold mb-4">Upload Recording</h3>
+              
+              <div class="flex items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-lg">
+                <label class="flex flex-col items-center cursor-pointer">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 mb-2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="12" y1="18" x2="12" y2="12"></line>
+                    <line x1="9" y1="15" x2="15" y2="15"></line>
+                  </svg>
+                  <span class="text-gray-600 mb-2">Upload audio file</span>
+                  <span class="text-xs text-gray-400 mb-2">.mp3, .wav, .m4a, .webm</span>
+                  <input type="file" class="hidden" accept="audio/*" id="audio-upload" onchange="handleAudioUpload(event)">
+                  <button class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded" onclick="document.getElementById('audio-upload').click()">
+                    Select File
+                  </button>
+                </label>
+              </div>
+            </div>
+            
+            <div class="card">
+              <h3 class="text-lg font-semibold mb-4">Meeting Details</h3>
+              
+              <div class="mb-4">
+                <label class="block text-gray-700 mb-2">Meeting Title</label>
+                <input type="text" class="w-full p-2 border rounded" placeholder="e.g., Weekly Team Standup" id="meeting-title">
+              </div>
+              
+              <div class="mb-4">
+                <label class="block text-gray-700 mb-2">Participants</label>
+                <select multiple class="w-full p-2 border rounded h-32" id="meeting-participants">
+                  <option>John Doe</option>
+                  <option>Jane Smith</option>
+                  <option>Alex Johnson</option>
+                </select>
+              </div>
+              
+              <div class="hidden" id="audio-preview-container">
+                <h4 class="font-medium mb-2">Audio Preview:</h4>
+                <audio controls class="w-full mt-2" id="audio-preview"></audio>
+              </div>
+              
+              <div class="hidden" id="transcript-preview-container">
+                <h4 class="font-medium mb-2 mt-4">Transcription Preview:</h4>
+                <div class="bg-gray-100 p-4 rounded-lg max-h-60 overflow-y-auto">
+                  <pre class="whitespace-pre-wrap text-sm" id="transcript-preview"></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- CSV Import Tab -->
+          <div id="tab-csv-import" class="tab-content" style="display: none;">
+            <h2 class="text-2xl font-bold mb-6">CSV Data Import</h2>
+            
+            <div class="card">
+              <h3 class="text-lg font-semibold mb-4">Import Data from CSV</h3>
+              
+              <div class="mb-6">
+                <p class="text-gray-600 mb-4">
+                  Upload a CSV file to import data such as participants, past meetings, or action items. 
+                  The CSV should include headers in the first row.
+                </p>
+                
+                <div class="flex items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-lg">
+                  <label class="flex flex-col items-center cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 mb-2">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <line x1="12" y1="18" x2="12" y2="12"></line>
+                      <line x1="9" y1="15" x2="15" y2="15"></line>
+                    </svg>
+                    <span class="text-gray-600 mb-2">Upload CSV file</span>
+                    <input type="file" class="hidden" accept=".csv" id="csv-upload" onchange="handleCsvUpload(event)">
+                    <button class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded" onclick="document.getElementById('csv-upload').click()">
+                      Select File
+                    </button>
+                  </label>
+                </div>
+              </div>
+              
+              <div id="csv-loading" class="text-center py-4 hidden">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                <p class="mt-2 text-gray-600">Processing file...</p>
+              </div>
+              
+              <div id="csv-error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded hidden">
+                <p>Error processing CSV file. Please check the format and try again.</p>
+              </div>
+              
+              <div id="csv-success" class="mt-6 hidden">
+                <div class="flex items-center justify-between mb-4">
+                  <h4 class="font-medium">Data preview: <span id="csv-filename"></span></h4>
+                  <div class="space-x-2">
+                    <button 
+                      class="bg-green-500 hover:bg-green-600 text-white py-1 px-3 rounded text-sm"
+                      onclick="importCsvData()"
+                    >
+                      Import All
+                    </button>
+                    <button 
+                      class="bg-gray-500 hover:bg-gray-600 text-white py-1 px-3 rounded text-sm"
+                      onclick="clearCsvData()"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="overflow-x-auto">
+                  <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50" id="csv-table-head">
+                      <!-- CSV headers will be inserted here -->
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200" id="csv-table-body">
+                      <!-- CSV data rows will be inserted here -->
+                    </tbody>
+                  </table>
+                </div>
+                
+                <div class="mt-6">
+                  <h4 class="font-medium mb-3">Import Options</h4>
+                  <div class="space-y-4" id="csv-import-options">
+                    <!-- Import options will be inserted here based on CSV content -->
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="card">
+              <h3 class="text-lg font-semibold mb-4">CSV Format Guidelines</h3>
+              
+              <div class="space-y-4">
+                <div>
+                  <h4 class="font-medium">Team Members CSV Format</h4>
+                  <p class="text-sm text-gray-600">Required headers: name, email (optional: role, department)</p>
+                  <pre class="bg-gray-100 p-2 rounded mt-2 text-xs">name,email,role,department
+John Doe,john@example.com,Developer,Engineering
+Jane Smith,jane@example.com,Designer,Product</pre>
+                </div>
+                
+                <div>
+                  <h4 class="font-medium">Action Items CSV Format</h4>
+                  <p class="text-sm text-gray-600">Required headers: task, assignee (optional: dueDate, status)</p>
+                  <pre class="bg-gray-100 p-2 rounded mt-2 text-xs">task,assignee,dueDate,status
+Create wireframes,Jane Smith,2025-04-30,pending
+Update documentation,John Doe,2025-04-25,in-progress</pre>
+                </div>
+                
+                <div>
+                  <h4 class="font-medium">Meetings CSV Format</h4>
+                  <p class="text-sm text-gray-600">Required headers: title, date (optional: duration, participants, summary)</p>
+                  <pre class="bg-gray-100 p-2 rounded mt-2 text-xs">title,date,duration,participants,summary
+Product Review,2025-04-15,45 minutes,"John, Jane, Alex",Discussed Q2 roadmap</pre>
+                </div>
+                
+                <div>
+                  <h4 class="font-medium">Transcript CSV Format</h4>
+                  <p class="text-sm text-gray-600">Required headers: timestamp, speaker, text</p>
+                  <pre class="bg-gray-100 p-2 rounded mt-2 text-xs">timestamp,speaker,text
+00:00:15,John,Let's discuss the new feature
+00:00:30,Jane,I think we should prioritize the user experience
+00:00:45,Alex,I agree, and we also need to consider performance</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Other tabs will be added here in a full implementation -->
+          <div id="tab-meetings" class="tab-content" style="display: none;">
+            <h2 class="text-2xl font-bold mb-6">Past Meetings</h2>
+            <p>Past meetings content will be displayed here.</p>
+          </div>
+          
+          <div id="tab-action-items" class="tab-content" style="display: none;">
+            <h2 class="text-2xl font-bold mb-6">Action Items</h2>
+            <p>Action items content will be displayed here.</p>
+          </div>
+          
+          <div id="tab-team" class="tab-content" style="display: none;">
+            <h2 class="text-2xl font-bold mb-6">Team Members</h2>
+            <p>Team members content will be displayed here.</p>
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Application state
+    let isRecording = false;
+    let mediaRecorder = null;
+    let recordingChunks = [];
+    let csvData = null;
+    
+    // Initialize application
+    window.addEventListener('DOMContentLoaded', function() {
+      // Hide the loading screen and show the app after a brief delay
+      setTimeout(function() {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+      }, 1500);
+      
+      // Set initial active tab
+      setActiveTab('nav-record');
+    });
+    
+    // Tab switching functionality
+    function showTab(tabId) {
+      // Hide all tab content
+      const tabContents = document.querySelectorAll('.tab-content');
+      tabContents.forEach(tab => {
+        tab.style.display = 'none';
+      });
+      
+      // Show selected tab
+      document.getElementById(`tab-${tabId}`).style.display = 'block';
+      
+      // Update navigation highlight
+      setActiveTab(`nav-${tabId}`);
+    }
+    
+    function setActiveTab(tabId) {
+      // Remove active class from all nav items
+      const navItems = document.querySelectorAll('.nav-item');
+      navItems.forEach(item => {
+        item.classList.remove('active');
+      });
+      
+      // Add active class to selected nav item
+      document.getElementById(tabId).classList.add('active');
+    }
+    
+    // Recording functionality
+    function toggleRecording() {
+      if (isRecording) {
+        stopRecording();
+      } else {
+        startRecording();
+      }
+    }
+    
+    async function startRecording() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        recordingChunks = [];
+        
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            recordingChunks.push(event.data);
+          }
+        };
+        
+        mediaRecorder.onstop = () => {
+          const audioBlob = new Blob(recordingChunks, { type: 'audio/webm' });
+          const audioUrl = URL.createObjectURL(audioBlob);
+          
+          // Display audio preview
+          const audioPreview = document.getElementById('audio-preview');
+          audioPreview.src = audioUrl;
+          
+          document.getElementById('audio-preview-container').classList.remove('hidden');
+          
+          // Simulate transcription (in a real app, this would call an API)
+          simulateTranscription();
+        };
+        
+        mediaRecorder.start();
+        isRecording = true;
+        
+        // Update UI
+        document.getElementById('recording-status').innerHTML = '<span class="text-red-500 font-medium flex items-center justify-center"><span class="w-3 h-3 bg-red-500 rounded-full mr-2 animate-pulse"></span>Recording in progress...</span>';
+        
+        // Change button to stop button
+        document.getElementById('record-button').innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="6" y="6" width="12" height="12"></rect>
+          </svg>
+        `;
+      } catch (err) {
+        console.error('Error accessing microphone:', err);
+        alert('Error accessing microphone. Please check your permissions.');
+      }
+    }
+    
+    function stopRecording() {
+      if (mediaRecorder && isRecording) {
+        mediaRecorder.stop();
+        isRecording = false;
+        
+        // Update UI
+        document.getElementById('recording-status').textContent = 'Recording stopped. Processing audio...';
+        
+        // Change button back to mic
+        document.getElementById('record-button').innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+            <line x1="12" y1="19" x2="12" y2="23"></line>
+            <line x1="8" y1="23" x2="16" y2="23"></line>
+          </svg>
+        `;
+        
+        // Stop all tracks
+        mediaRecorder.stream.getTracks().forEach(track => track.stop());
+      }
+    }
+    
+    function simulateTranscription() {
+      // Simulate a delay for processing
+      setTimeout(() => {
+        // Demo transcription
+        const demoTranscript = `
+00:00:05 John: Let's go over the key items for our new project launch.
+00:00:12 Jane: I think we should prioritize the user onboarding flow first.
+00:00:18 Alex: Agreed. The current flow has too much friction.
+00:00:25 John: OK, decision made. We'll prioritize redesigning the onboarding flow.
+00:00:32 Jane: I can take that on. I'll have designs ready by next Friday.
+00:00:40 John: Great. Next item is the marketing campaign. I believe we should delay it until the new features are ready.
+00:00:48 Alex: That makes sense. Let's push it to July instead of June.
+00:00:55 John: Decision made. Marketing campaign moves to July.
+00:01:02 Alex: I'll update the marketing team and adjust the timeline.
+00:01:08 John: Perfect. Any other items?
+00:01:15 Jane: We need to decide on the budget for user testing.
+00:01:22 John: Let's allocate $5,000 for this round.
+00:01:28 Alex: That works for me.
+00:01:35 John: Decision made. $5,000 for user testing.
+00:01:42 Jane: I'll coordinate with the finance team to secure that budget.
+00:01:50 John: Thanks everyone, meeting adjourned.
+        `;
+        
+        // Update UI
+        document.getElementById('transcript-preview').textContent = demoTranscript;
+        document.getElementById('transcript-preview-container').classList.remove('hidden');
+        document.getElementById('recording-status').textContent = 'Transcription complete. You can review the transcript below.';
+      }, 2000);
+    }
+    
+    // Audio upload handler
+    function handleAudioUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        // Display file name
+        document.getElementById('recording-status').textContent = `Selected file: ${file.name}`;
+        
+        // Create object URL for preview
+        const audioUrl = URL.createObjectURL(file);
+        const audioPreview = document.getElementById('audio-preview');
+        audioPreview.src = audioUrl;
+        
+        document.getElementById('audio-preview-container').classList.remove('hidden');
+        
+        // Simulate transcription process
+        simulateTranscription();
+      }
+    }
+    
+    // CSV upload and processing
+    function handleCsvUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      // Update UI
+      document.getElementById('csv-filename').textContent = file.name;
+      document.getElementById('csv-loading').classList.remove('hidden');
+      document.getElementById('csv-error').classList.add('hidden');
+      document.getElementById('csv-success').classList.add('hidden');
+      
+      const reader = new FileReader();
+      
+      reader.onload = function(e) {
+        try {
+          const csvText = e.target.result;
+          processCSV(csvText, file.name);
+        } catch (error) {
+          console.error('Error reading CSV:', error);
+          document.getElementById('csv-loading').classList.add('hidden');
+          document.getElementById('csv-error').classList.remove('hidden');
+        }
+      };
+      
+      reader.onerror = function() {
+        document.getElementById('csv-loading').classList.add('hidden');
+        document.getElementById('csv-error').classList.remove('hidden');
+      };
+      
+      reader.readAsText(file);
+    }
+    
+    function processCSV(csvText, fileName) {
+      try {
+        // Parse CSV
+        const rows = csvText.split(/\r?\n/);
+        const headers = parseCSVLine(rows[0]);
+        
+        const data = [];
+        for (let i = 1; i < rows.length; i++) {
+          if (rows[i].trim()) {
+            const values = parseCSVLine(rows[i]);
+            const row = {};
+            
+            headers.forEach((header, index) => {
+              row[header] = values[index] || '';
+            });
+            
+            data.push(row);
+          }
+        }
+        
+        // Store parsed data
+        csvData = { headers, data, fileName };
+        
+        // Determine CSV type
+        const csvType = detectCSVType(headers);
+        
+        // Update UI with the CSV data
+        updateCSVPreview(csvData, csvType);
+        
+        document.getElementById('csv-loading').classList.add('hidden');
+        document.getElementById('csv-success').classList.remove('hidden');
+      } catch (error) {
+        console.error('Error processing CSV:', error);
+        document.getElementById('csv-loading').classList.add('hidden');
+        document.getElementById('csv-error').classList.remove('hidden');
+      }
+    }
+    
+    function parseCSVLine(line) {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        
+        if (char === '"' && (i === 0 || line[i-1] !== '\\')) {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      
+      // Add the last field
+      result.push(current.trim());
+      
+      // Clean up quotes
+      return result.map(value => {
+        if (value.startsWith('"') && value.endsWith('"')) {
+          return value.slice(1, -1);
+        }
+        return value;
+      });
+    }
+    
+    function detectCSVType(headers) {
+      // Convert headers to lowercase for case-insensitive comparison
+      const headerSet = new Set(headers.map(h => h.toLowerCase()));
+      
+      if (headerSet.has('timestamp') && headerSet.has('speaker') && headerSet.has('text')) {
+        return 'transcript';
+      } else if (headerSet.has('name') && (headerSet.has('email') || headerSet.has('role'))) {
+        return 'team_members';
+      } else if (headerSet.has('task') || headerSet.has('action') || headerSet.has('action item')) {
+        return 'action_items';
+      } else if (headerSet.has('title') && headerSet.has('date')) {
+        return 'meetings';
+      }
+      
+      return 'unknown';
+    }
+    
+    function updateCSVPreview(csvData, csvType) {
+      const { headers, data } = csvData;
+      
+      // Update table header
+      const tableHead = document.getElementById('csv-table-head');
+      let headerRow = '<tr>';
+      
+      headers.forEach(header => {
+        headerRow += `<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">${header}</th>`;
+      });
+      
+      headerRow += '<th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th></tr>';
+      tableHead.innerHTML = headerRow;
+      
+      // Update table body (limit to 5 rows for preview)
+      const tableBody = document.getElementById('csv-table-body');
+      let bodyHTML = '';
+      
+      const previewRows = data.slice(0, 5);
+      previewRows.forEach((row, rowIndex) => {
+        bodyHTML += '<tr>';
+        
+        headers.forEach(header => {
+          bodyHTML += `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${row[header] || ''}</td>`;
+        });
+        
+        bodyHTML += `<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+          <button class="text-blue-600 hover:text-blue-900">Import</button>
+        </td>`;
+        
+        bodyHTML += '</tr>';
+      });
+      
+      // Show row count if more than 5
+      if (data.length > 5) {
+        bodyHTML += `<tr>
+          <td colspan="${headers.length + 1}" class="px-6 py-4 text-center text-sm text-gray-500">
+            ... and ${data.length - 5} more rows
+          </td>
+        </tr>`;
+      }
+      
+      tableBody.innerHTML = bodyHTML;
+      
+      // Update import options
+      const importOptions = document.getElementById('csv-import-options');
+      let optionsHTML = '';
+      
+      switch (csvType) {
+        case 'transcript':
+          optionsHTML += `
+            <div class="flex items-center">
+              <input type="checkbox" id="import-transcript" class="mr-2" checked>
+              <label for="import-transcript">Import as Meeting Transcript</label>
+            </div>
+            <div class="flex items-center">
+              <input type="checkbox" id="extract-action-items" class="mr-2" checked>
+              <label for="extract-action-items">Extract Action Items</label>
+            </div>
+            <div class="flex items-center">
+              <input type="checkbox" id="generate-summary" class="mr-2" checked>
+              <label for="generate-summary">Generate Meeting Summary</label>
+            </div>
+          `;
+          break;
+          
+        case 'team_members':
+          optionsHTML += `
+            <div class="flex items-center">
+              <input type="checkbox" id="import-team-members" class="mr-2" checked>
+              <label for="import-team-members">Import as Team Members</label>
+            </div>
+          `;
+          break;
+          
+        case 'action_items':
+          optionsHTML += `
+            <div class="flex items-center">
+              <input type="checkbox" id="import-action-items" class="mr-2" checked>
+              <label for="import-action-items">Import as Action Items</label>
+            </div>
+          `;
+          break;
+          
+        case 'meetings':
+          optionsHTML += `
+            <div class="flex items-center">
+              <input type="checkbox" id="import-meetings" class="mr-2" checked>
+              <label for="import-meetings">Import as Past Meetings</label>
+            </div>
+          `;
+          break;
+          
+        default:
+          optionsHTML += `
+            <p class="text-yellow-600">Could not determine CSV type. Please ensure your CSV has the correct headers.</p>
+          `;
+      }
+      
+      importOptions.innerHTML = optionsHTML;
+    }
+    
+    function importCsvData() {
+      if (!csvData) return;
+      
+      // In a real app, this would send data to the server
+      // For now, we'll just simulate a successful import
+      
+      alert(`Successfully imported ${csvData.data.length} records from ${csvData.fileName}`);
+      
+      // Clear the CSV data
+      clearCsvData();
+    }
+    
+    function clearCsvData() {
+      csvData = null;
+      document.getElementById('csv-success').classList.add('hidden');
+      document.getElementById('csv-table-head').innerHTML = '';
+      document.getElementById('csv-table-body').innerHTML = '';
+      document.getElementById('csv-import-options').innerHTML = '';
+      document.getElementById('csv-upload').value = '';
+    }
+  </script>
+</body>
+</html>
