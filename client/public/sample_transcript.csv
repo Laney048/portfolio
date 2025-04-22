@@ -1,0 +1,11 @@
+timestamp,speaker,text
+00:01,PM,"Alright folks, we've got 45 minutes to lock the priorities for sprint 19."
+00:15,Engineer_1,Login flow is still breaking intermittently on mobile.
+00:28,QA,"Yeah, it passed 4/5 tests this morning, but the last one failed due to timeout."
+00:41,PM,Noted. Should we mark it as a P1 or P2 for now?
+00:53,Engineer_2,"If it's just timeout, might be a P2. Not critical."
+01:05,Designer,Still waiting on final copy for the onboarding screens.
+01:18,Product Lead,"Onboarding redesign isn't on the roadmap this sprint, is it?"
+01:30,PM,"It's not officially in, but marketing asked for it again yesterday."
+01:43,Marketing,Yes — launch was supposed to be next week but they pushed. We could still make it.
+01:56,Engineer_1,"If we're doing onboarding, we need specs locked today."

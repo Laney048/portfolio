@@ -1,0 +1,658 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { File, Mic, Play, Square, List, Bell, Calendar, Users, CheckSquare, Clock, User } from 'lucide-react';
+
+// Main Application Component
+export default function MeetingAssistant() {
+  const [activeTab, setActiveTab] = useState('record');
+  const [isRecording, setIsRecording] = useState(false);
+  const [meetings, setMeetings] = useState([]);
+  const [transcription, setTranscription] = useState('');
+  const [selectedMeeting, setSelectedMeeting] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [participants, setParticipants] = useState(['John Doe', 'Jane Smith', 'Alex Johnson']);
+  
+  // For simulating the recording
+  const mediaRecorderRef = useRef(null);
+  const recordingChunksRef = useRef([]);
+  const audioRef = useRef(null);
+  
+  // Demo meetings data
+  useEffect(() => {
+    // Sample meetings for demo purposes
+    setMeetings([
+      {
+        id: 1,
+        title: 'Product Roadmap Discussion',
+        date: 'April 20, 2025',
+        duration: '45 minutes',
+        status: 'Analyzed',
+        summary: 'The team discussed Q3 product roadmap priorities. Marketing needs were emphasized.',
+        decisions: [
+          'Prioritize mobile app redesign for Q3',
+          'Delay the API upgrade until Q4',
+          'Approve budget for user research study'
+        ],
+        actionItems: [
+          {
+            task: 'Create detailed spec for mobile redesign',
+            assignee: 'Jane Smith',
+            dueDate: 'April 30, 2025'
+          },
+          {
+            task: 'Get vendor quotes for user research',
+            assignee: 'John Doe',
+            dueDate: 'April 25, 2025'
+          },
+          {
+            task: 'Update roadmap document',
+            assignee: 'Alex Johnson',
+            dueDate: 'April 23, 2025'
+          }
+        ]
+      },
+      {
+        id: 2,
+        title: 'Weekly Team Standup',
+        date: 'April 19, 2025',
+        duration: '15 minutes',
+        status: 'Analyzed',
+        summary: 'Team members shared progress updates and blockers.',
+        decisions: [
+          'Move daily standup to 9:30 AM starting next week',
+          'Use new project tracking tool'
+        ],
+        actionItems: [
+          {
+            task: 'Update calendar invites for new standup time',
+            assignee: 'Alex Johnson',
+            dueDate: 'April 22, 2025'
+          },
+          {
+            task: 'Send out project tracking tool guidelines',
+            assignee: 'Jane Smith',
+            dueDate: 'April 23, 2025'
+          }
+        ]
+      }
+    ]);
+    
+    // Sample notifications
+    setNotifications([
+      {
+        id: 1,
+        title: 'New action item assigned',
+        description: 'Create detailed spec for mobile redesign',
+        date: 'Just now',
+        read: false
+      },
+      {
+        id: 2,
+        title: 'Meeting summary available',
+        description: 'Product Roadmap Discussion summary is ready',
+        date: '2 hours ago',
+        read: true
+      }
+    ]);
+  }, []);
+  
+  // Handle starting and stopping recording
+  const handleStartRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          recordingChunksRef.current.push(event.data);
+        }
+      };
+      
+      mediaRecorderRef.current.onstop = () => {
+        const audioBlob = new Blob(recordingChunksRef.current, { type: 'audio/webm' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        audioRef.current.src = audioUrl;
+        
+        // Simulate transcription processing with a timeout
+        simulateTranscription();
+      };
+      
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error('Error accessing microphone:', err);
+      alert('Error accessing microphone. Please check your permissions.');
+    }
+  };
+  
+  const handleStopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+    }
+  };
+  
+  // Simulate transcription and analysis
+  const simulateTranscription = () => {
+    // Demo transcription data - in a real app, this would come from an API
+    const demoTranscription = `
+John: Let's go over the key items for our new project launch.
+Jane: I think we should prioritize the user onboarding flow first.
+Alex: Agreed. The current flow has too much friction.
+John: OK, decision made. We'll prioritize redesigning the onboarding flow.
+Jane: I can take that on. I'll have designs ready by next Friday.
+John: Great. Next item is the marketing campaign. I believe we should delay it until the new features are ready.
+Alex: That makes sense. Let's push it to July instead of June.
+John: Decision made. Marketing campaign moves to July.
+Alex: I'll update the marketing team and adjust the timeline.
+John: Perfect. Any other items?
+Jane: We need to decide on the budget for user testing.
+John: Let's allocate $5,000 for this round.
+Alex: That works for me.
+John: Decision made. $5,000 for user testing.
+Jane: I'll coordinate with the finance team to secure that budget.
+John: Thanks everyone, meeting adjourned.
+`;
+    
+    // Set transcription with a delay to simulate processing
+    setTimeout(() => {
+      setTranscription(demoTranscription);
+      
+      // Add the new meeting to the list
+      const newMeeting = {
+        id: meetings.length + 1,
+        title: 'New Project Launch Planning',
+        date: 'April 21, 2025',
+        duration: '25 minutes',
+        status: 'Processing',
+        summary: '',
+        decisions: [],
+        actionItems: []
+      };
+      
+      setMeetings([newMeeting, ...meetings]);
+      setSelectedMeeting(newMeeting);
+      
+      // Simulate AI analysis completion
+      setTimeout(() => {
+        const updatedMeeting = {
+          ...newMeeting,
+          status: 'Analyzed',
+          summary: 'The team discussed project launch priorities, focusing on user onboarding, marketing timeline, and user testing budget.',
+          decisions: [
+            'Prioritize redesigning the user onboarding flow',
+            'Delay marketing campaign from June to July',
+            'Allocate $5,000 for user testing'
+          ],
+          actionItems: [
+            {
+              task: 'Create new designs for onboarding flow',
+              assignee: 'Jane Smith',
+              dueDate: 'April 28, 2025'
+            },
+            {
+              task: 'Update marketing team and adjust campaign timeline',
+              assignee: 'Alex Johnson',
+              dueDate: 'April 23, 2025'
+            },
+            {
+              task: 'Coordinate with finance for user testing budget',
+              assignee: 'Jane Smith',
+              dueDate: 'April 24, 2025'
+            }
+          ]
+        };
+        
+        setMeetings(meetings => [
+          updatedMeeting,
+          ...meetings.slice(1)
+        ]);
+        
+        setSelectedMeeting(updatedMeeting);
+        
+        // Add notification
+        const newNotification = {
+          id: notifications.length + 1,
+          title: 'Meeting analysis complete',
+          description: 'New Project Launch Planning analysis is ready',
+          date: 'Just now',
+          read: false
+        };
+        
+        setNotifications([newNotification, ...notifications]);
+      }, 5000);
+    }, 3000);
+  };
+  
+  // Handler for uploading an audio file
+  const handleUploadAudio = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const audioUrl = URL.createObjectURL(file);
+      audioRef.current.src = audioUrl;
+      simulateTranscription();
+    }
+  };
+  
+  // Render the navigation sidebar
+  const renderSidebar = () => {
+    return (
+      <div className="w-64 h-full bg-gray-800 text-white p-4">
+        <h1 className="text-2xl font-bold mb-8">Meeting Assistant</h1>
+        
+        <nav className="space-y-2">
+          <button 
+            className={`flex items-center space-x-3 w-full p-3 rounded-lg ${activeTab === 'record' ? 'bg-blue-600' : 'hover:bg-gray-700'}`}
+            onClick={() => setActiveTab('record')}
+          >
+            <Mic size={20} />
+            <span>Record Meeting</span>
+          </button>
+          
+          <button 
+            className={`flex items-center space-x-3 w-full p-3 rounded-lg ${activeTab === 'meetings' ? 'bg-blue-600' : 'hover:bg-gray-700'}`}
+            onClick={() => setActiveTab('meetings')}
+          >
+            <List size={20} />
+            <span>Past Meetings</span>
+          </button>
+          
+          <button 
+            className={`flex items-center space-x-3 w-full p-3 rounded-lg ${activeTab === 'action-items' ? 'bg-blue-600' : 'hover:bg-gray-700'}`}
+            onClick={() => setActiveTab('action-items')}
+          >
+            <CheckSquare size={20} />
+            <span>Action Items</span>
+          </button>
+          
+          <button 
+            className={`flex items-center space-x-3 w-full p-3 rounded-lg ${activeTab === 'team' ? 'bg-blue-600' : 'hover:bg-gray-700'}`}
+            onClick={() => setActiveTab('team')}
+          >
+            <Users size={20} />
+            <span>Team Members</span>
+          </button>
+        </nav>
+        
+        <div className="absolute bottom-4 left-4 right-4">
+          <div className="flex items-center space-x-3 p-3">
+            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
+              <User size={20} />
+            </div>
+            <div>
+              <p className="font-medium">Admin User</p>
+              <p className="text-sm text-gray-300">admin@example.com</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+  
+  // Render the header with notifications
+  const renderHeader = () => {
+    return (
+      <header className="h-16 bg-white border-b flex items-center justify-end px-6">
+        <div className="relative">
+          <button className="p-2 rounded-full hover:bg-gray-100">
+            <Bell size={20} />
+            {notifications.filter(n => !n.read).length > 0 && (
+              <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center">
+                {notifications.filter(n => !n.read).length}
+              </span>
+            )}
+          </button>
+        </div>
+      </header>
+    );
+  };
+  
+  // Render the recording interface
+  const renderRecordingTab = () => {
+    return (
+      <div className="p-6 max-w-4xl mx-auto">
+        <h2 className="text-2xl font-bold mb-6">Record or Upload Meeting</h2>
+        
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h3 className="text-lg font-semibold mb-4">Live Recording</h3>
+          
+          <div className="flex items-center justify-center space-x-4 mb-6">
+            {!isRecording ? (
+              <button 
+                className="bg-red-500 hover:bg-red-600 text-white rounded-full p-4"
+                onClick={handleStartRecording}
+              >
+                <Mic size={24} />
+              </button>
+            ) : (
+              <button 
+                className="bg-gray-500 hover:bg-gray-600 text-white rounded-full p-4"
+                onClick={handleStopRecording}
+              >
+                <Square size={24} />
+              </button>
+            )}
+          </div>
+          
+          <div className="text-center">
+            {isRecording ? (
+              <p className="text-red-500 font-medium flex items-center justify-center">
+                <span className="w-3 h-3 bg-red-500 rounded-full mr-2 animate-pulse"></span>
+                Recording in progress...
+              </p>
+            ) : (
+              <p className="text-gray-500">Click to start recording your meeting</p>
+            )}
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h3 className="text-lg font-semibold mb-4">Upload Recording</h3>
+          
+          <div className="flex items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-lg">
+            <label className="flex flex-col items-center cursor-pointer">
+              <File size={48} className="text-gray-400 mb-2" />
+              <span className="text-gray-600 mb-2">Upload audio file</span>
+              <span className="text-xs text-gray-400 mb-2">.mp3, .wav, .m4a, .webm</span>
+              <input 
+                type="file" 
+                className="hidden" 
+                accept="audio/*"
+                onChange={handleUploadAudio}
+              />
+              <button className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">
+                Select File
+              </button>
+            </label>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h3 className="text-lg font-semibold mb-4">Meeting Details</h3>
+          
+          <div className="mb-4">
+            <label className="block text-gray-700 mb-2">Meeting Title</label>
+            <input 
+              type="text" 
+              className="w-full p-2 border rounded"
+              placeholder="e.g., Weekly Team Standup"
+            />
+          </div>
+          
+          <div className="mb-4">
+            <label className="block text-gray-700 mb-2">Participants</label>
+            <select 
+              multiple 
+              className="w-full p-2 border rounded h-32"
+              defaultValue={participants}
+            >
+              {participants.map((participant, index) => (
+                <option key={index} value={participant}>{participant}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <audio ref={audioRef} controls className="w-full mt-4" />
+          </div>
+          
+          {transcription && (
+            <div className="mt-6">
+              <h4 className="font-medium mb-2">Transcription Preview:</h4>
+              <div className="bg-gray-100 p-4 rounded-lg max-h-60 overflow-y-auto">
+                <pre className="whitespace-pre-wrap text-sm">{transcription}</pre>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+  
+  // Render past meetings list
+  const renderMeetingsTab = () => {
+    return (
+      <div className="p-6">
+        <h2 className="text-2xl font-bold mb-6">Past Meetings</h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {meetings.map(meeting => (
+            <div 
+              key={meeting.id} 
+              className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => setSelectedMeeting(meeting)}
+            >
+              <h3 className="text-lg font-semibold mb-2">{meeting.title}</h3>
+              <div className="flex items-center space-x-2 text-gray-500 mb-4">
+                <Calendar size={16} />
+                <span>{meeting.date}</span>
+                <Clock size={16} className="ml-2" />
+                <span>{meeting.duration}</span>
+              </div>
+              <div className="flex items-center">
+                <span 
+                  className={`px-2 py-1 rounded-full text-xs ${
+                    meeting.status === 'Analyzed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                  }`}
+                >
+                  {meeting.status}
+                </span>
+              </div>
+              {meeting.summary && (
+                <p className="mt-4 text-gray-600 text-sm line-clamp-3">{meeting.summary}</p>
+              )}
+            </div>
+          ))}
+        </div>
+        
+        {selectedMeeting && renderMeetingDetails()}
+      </div>
+    );
+  };
+  
+  // Render details of a selected meeting
+  const renderMeetingDetails = () => {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-6">
+        <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="p-6 border-b">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl font-bold">{selectedMeeting.title}</h3>
+              <button 
+                className="text-gray-500 hover:text-gray-700"
+                onClick={() => setSelectedMeeting(null)}
+              >
+                &times;
+              </button>
+            </div>
+            <div className="flex items-center space-x-2 text-gray-500 mt-2">
+              <Calendar size={16} />
+              <span>{selectedMeeting.date}</span>
+              <Clock size={16} className="ml-2" />
+              <span>{selectedMeeting.duration}</span>
+            </div>
+          </div>
+          
+          <div className="p-6">
+            <div className="mb-6">
+              <h4 className="font-semibold text-lg mb-2">Summary</h4>
+              <p className="text-gray-700">{selectedMeeting.summary || 'Analysis in progress...'}</p>
+            </div>
+            
+            <div className="mb-6">
+              <h4 className="font-semibold text-lg mb-2">Key Decisions</h4>
+              {selectedMeeting.decisions && selectedMeeting.decisions.length > 0 ? (
+                <ul className="list-disc pl-5 space-y-1">
+                  {selectedMeeting.decisions.map((decision, index) => (
+                    <li key={index} className="text-gray-700">{decision}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-500 italic">No decisions identified yet</p>
+              )}
+            </div>
+            
+            <div className="mb-6">
+              <h4 className="font-semibold text-lg mb-2">Action Items</h4>
+              {selectedMeeting.actionItems && selectedMeeting.actionItems.length > 0 ? (
+                <div className="space-y-3">
+                  {selectedMeeting.actionItems.map((item, index) => (
+                    <div key={index} className="bg-gray-50 p-3 rounded-lg">
+                      <p className="font-medium">{item.task}</p>
+                      <div className="flex items-center justify-between mt-2 text-sm">
+                        <span className="text-gray-600">Assigned to: {item.assignee}</span>
+                        <span className="text-gray-600">Due: {item.dueDate}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 italic">No action items identified yet</p>
+              )}
+            </div>
+            
+            <div className="flex justify-end space-x-3 mt-6">
+              <button className="bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded hover:bg-gray-50">
+                Download Transcript
+              </button>
+              <button className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">
+                Share Summary
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+  
+  // Render action items tab
+  const renderActionItemsTab = () => {
+    // Gather all action items from all meetings
+    const allActionItems = meetings.flatMap(meeting => 
+      meeting.actionItems ? meeting.actionItems.map(item => ({
+        ...item,
+        meetingTitle: meeting.title,
+        meetingDate: meeting.date
+      })) : []
+    );
+    
+    return (
+      <div className="p-6">
+        <h2 className="text-2xl font-bold mb-6">Action Items</h2>
+        
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Meeting</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {allActionItems.map((item, index) => (
+                <tr key={index}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">{item.task}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">{item.assignee}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">{item.dueDate}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">{item.meetingTitle}</div>
+                    <div className="text-xs text-gray-400">{item.meetingDate}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <select className="text-sm border rounded p-1">
+                      <option value="pending">Pending</option>
+                      <option value="in-progress">In Progress</option>
+                      <option value="completed">Completed</option>
+                    </select>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+  
+  // Render team members tab
+  const renderTeamTab = () => {
+    return (
+      <div className="p-6">
+        <h2 className="text-2xl font-bold mb-6">Team Members</h2>
+        
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex justify-between mb-6">
+            <input 
+              type="text" 
+              className="border rounded p-2 w-1/3"
+              placeholder="Search team members..."
+            />
+            <button className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">
+              Add New Member
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {participants.map((name, index) => (
+              <div key={index} className="border rounded-lg p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                    <User size={24} className="text-gray-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium">{name}</h3>
+                    <p className="text-sm text-gray-500">{name.toLowerCase().replace(' ', '.') + '@example.com'}</p>
+                  </div>
+                </div>
+                <div className="mt-4 text-sm text-gray-600">
+                  <p>Active action items: {
+                    meetings.flatMap(m => m.actionItems || []).filter(item => item.assignee === name).length
+                  }</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+  
+  // Render main content based on active tab
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'record':
+        return renderRecordingTab();
+      case 'meetings':
+        return renderMeetingsTab();
+      case 'action-items':
+        return renderActionItemsTab();
+      case 'team':
+        return renderTeamTab();
+      default:
+        return renderRecordingTab();
+    }
+  };
+  
+  return (
+    <div className="flex h-screen bg-gray-100">
+      {renderSidebar()}
+      
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {renderHeader()}
+        
+        <main className="flex-1 overflow-y-auto">
+          {renderContent()}
+        </main>
+      </div>
+    </div>
+  );
+}
